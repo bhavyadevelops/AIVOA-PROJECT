@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "AIVOA Complaint Intake"
+description = "A two-panel AI-powered pharmaceutical customer complaint intake workspace that extracts complaint details from documents or pasted text, presents editable structured fields, assesses risk, and saves the completed complaint."
+version = "1.0.0"
+id = "artifacts/complaint-intake"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18505
+
+[services.development]
+run = "pnpm --filter @workspace/complaint-intake run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/complaint-intake", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/complaint-intake/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18505"
+BASE_PATH = "/"

@@ -1,0 +1,1 @@
+export const EXTRACTION_PROMPT = `Extract pharmaceutical complaint fields. Return only JSON using the following string keys: complaintSource, customerName, productName, strength, batch, manufacturingDate, expiryDate, quantity, complaintType, complaintDate, description. Use empty strings when unknown.`;

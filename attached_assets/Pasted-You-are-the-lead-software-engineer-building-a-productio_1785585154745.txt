@@ -1,0 +1,573 @@
+You are the lead software engineer building a production-quality internship assignment.
+
+Your goal is NOT to brainstorm.
+
+Your goal is to IMPLEMENT.
+
+The assignment is an AI-Powered Customer Complaint Management System for pharmaceutical manufacturers (API + FDF).
+
+This project must feel like a miniature AIVOA product.
+
+The entire application must be enterprise-grade, clean, modular, scalable, and interview-ready.
+
+IMPORTANT
+
+DO NOT redesign anything.
+
+DO NOT invent extra modules.
+
+DO NOT add features outside this specification.
+
+DO NOT simplify anything below.
+
+DO NOT remove existing functionality unless it conflicts with this specification.
+
+Everything must work together.
+
+TECHNOLOGY STACK
+
+Mandatory
+
+Frontend
+
+React
+TypeScript
+Redux Toolkit
+Vite
+Tailwind
+shadcn/ui
+Inter font
+
+Backend
+
+Python
+FastAPI
+
+AI
+
+LangGraph
+Groq
+gemma2-9b-it
+
+Database
+
+PostgreSQL
+APPLICATION LAYOUT
+
+Exactly two panels.
+
+LEFT
+
+Customer Complaint Form
+
+RIGHT
+
+AI Complaint Intake Assistant
+
+No additional pages.
+
+No dashboards.
+
+No admin portal.
+
+No login.
+
+No notifications.
+
+No analytics.
+
+LEFT PANEL
+
+Title
+
+Log Customer Complaint
+
+Status Badge
+
+Pending Triage
+
+Sections
+
+Section 1
+
+Origin & Customer
+
+Fields
+
+Complaint Source
+
+Customer Name
+
+Section 2
+
+Product & Batch
+
+Fields
+
+Product Name
+
+Product Strength / Grade
+
+Batch / Lot Number
+
+Manufacturing Date
+
+Expiry Date
+
+Quantity Affected (kg)
+
+Section 3
+
+Complaint Details
+
+Complaint Type
+
+Complaint Date
+
+Detailed Complaint Description
+
+Section 4
+
+Initial Assessment
+
+Initial Severity
+
+Priority
+
+Buttons
+
+Reset
+
+Save Complaint
+
+RIGHT PANEL
+
+Title
+
+AI Complaint Intake Assistant
+
+Contains
+
+Document Upload
+
+Supports
+
+PDF
+
+DOCX
+
+TXT
+
+EML
+
+Maximum
+
+10 MB
+
+Also provide
+
+Paste Complaint Text
+
+Extraction Progress
+
+Processing Status
+
+AI Disclaimer
+
+Chat
+
+Risk Assessment
+
+AI PIPELINE
+
+Must use LangGraph.
+
+Graph
+
+Upload
+
+↓
+
+Parse Input
+
+↓
+
+Extract Complaint Fields
+
+↓
+
+Classify Risk
+
+↓
+
+Generate Copilot Summary
+
+↓
+
+Return JSON
+
+The UI should display the current stage while processing.
+
+Example
+
+Reading Document
+
+Extracting Fields
+
+Classifying Risk
+
+Generating Summary
+
+Completed
+
+JSON OUTPUT
+
+Return structured JSON matching Redux state.
+
+Complaint
+
+Complaint Source
+
+Customer Name
+
+Product Name
+
+Strength
+
+Batch
+
+Manufacturing Date
+
+Expiry Date
+
+Quantity
+
+Complaint Type
+
+Complaint Date
+
+Description
+
+Severity
+
+Priority
+
+Risk Assessment
+
+Overall Risk
+
+Severity Rationale
+
+Priority Rationale
+
+Patient Safety Impact
+
+Product Quality Impact
+
+Recommended Actions
+
+Confidence Notes
+
+REDUX
+
+Create slices
+
+complaintSlice
+
+riskSlice
+
+uiSlice
+
+State must synchronize
+
+Upload
+
+↓
+
+AI
+
+↓
+
+Form
+
+↓
+
+Risk Panel
+
+Everything updates automatically.
+
+FASTAPI
+
+Endpoints
+
+POST
+
+/extract
+
+POST
+
+/copilot/chat
+
+POST
+
+/complaints
+
+GET
+
+/complaints/{id}
+
+GET
+
+/health
+
+DATABASE
+
+PostgreSQL
+
+Complaint table
+
+Store
+
+Complaint fields
+
+Risk JSON
+
+Document Metadata
+
+CreatedAt
+
+UpdatedAt
+
+RISK PANEL
+
+Professional cards
+
+Overall Risk
+
+Severity
+
+Priority
+
+Patient Safety
+
+Product Quality
+
+Recommendations
+
+Confidence
+
+No conversational paragraphs.
+
+Structured.
+
+Enterprise tone.
+
+HUMAN IN THE LOOP
+
+Every AI-generated field displays
+
+AI Generated
+
+When user edits
+
+Badge changes to
+
+Verified
+
+User always has final control.
+
+BONUS FEATURE 1
+
+Complaint Completeness Checker
+
+If fields are missing
+
+Show
+
+Missing Batch Number
+
+Missing Expiry Date
+
+Missing Quantity
+
+Provide recommendations.
+
+Do NOT silently leave blanks.
+
+BONUS FEATURE 2
+
+Explainable AI
+
+Every risk classification must contain
+
+Why?
+
+Example
+
+Detected
+
+Broken Seal
+
+↓
+
+Packaging Integrity Issue
+
+↓
+
+Potential Patient Risk
+
+↓
+
+Severity Major
+
+Do not use generic explanations.
+
+DEMO FIXTURES
+
+Create
+
+1
+
+API Complaint PDF
+
+2
+
+Packaging Complaint Email
+
+3
+
+Vague Customer Complaint TXT
+
+These should populate the form correctly.
+
+README
+
+Include
+
+Architecture Diagram
+
+Technology Stack
+
+Folder Structure
+
+Setup
+
+Environment Variables
+
+LangGraph Flow
+
+Design Decisions
+
+Future Work
+
+DO NOT IMPLEMENT
+
+NO Authentication
+
+NO User Management
+
+NO Admin Dashboard
+
+NO CAPA Module
+
+NO Investigation Workflow
+
+NO Recall Management
+
+NO Pharmacovigilance
+
+NO MedDRA
+
+NO Audit Trail
+
+NO 21 CFR Part 11
+
+NO ERP Integration
+
+NO SAP
+
+NO Oracle
+
+NO Analytics
+
+NO Notifications
+
+NO Additional Pages
+
+Stay strictly within the complaint intake workflow.
+
+FOLDER STRUCTURE
+frontend/
+│
+├── src/
+│   ├── components/
+│   │   ├── form/
+│   │   ├── assistant/
+│   │   ├── risk/
+│   │   └── layout/
+│   │
+│   ├── pages/
+│   │
+│   ├── hooks/
+│   │
+│   ├── services/
+│   │
+│   ├── store/
+│   │
+│   ├── types/
+│   │
+│   ├── utils/
+│   │
+│   └── App.tsx
+│
+backend/
+│
+├── agents/
+│   ├── graph.py
+│   ├── nodes/
+│   │   ├── parse_input.py
+│   │   ├── extract_fields.py
+│   │   ├── classify_risk.py
+│   │   ├── summarize.py
+│   │   └── completeness.py
+│   │
+│   ├── prompts/
+│   │
+│   └── services/
+│
+├── routers/
+│
+├── models/
+│
+├── schemas/
+│
+├── database.py
+│
+├── config.py
+│
+└── main.py
+DEVELOPMENT RULES
+
+Do NOT stop after generating code.
+
+Continue implementing until the entire specification is complete.
+
+Fix compile errors automatically.
+
+Fix runtime errors automatically.
+
+Refactor duplicated code.
+
+Keep the UI responsive.
+
+Use reusable components.
+
+Do not leave TODO comments.
+
+Do not use placeholder implementations where a functional implementation is feasible.
+
+After every completed feature, continue to the next feature automatically until the full specification is implemented.
+
+Finally, run the application, resolve build errors, and ensure the end-to-end flow works:
+
+Upload → AI Extraction → Form Population → Risk Assessment → Save Complaint

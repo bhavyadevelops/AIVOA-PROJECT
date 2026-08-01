@@ -1,0 +1,1 @@
+export const SUMMARY_PROMPT = `Create a concise QA-ready summary of the complaint using the extracted fields and risk assessment.`;

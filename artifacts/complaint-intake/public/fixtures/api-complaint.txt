@@ -1,0 +1,11 @@
+Complaint Source: Customer portal
+Customer Name: Meridian Pharma Distribution
+Product Name: Acetaminophen API
+Strength / Grade: USP
+Batch: API-ACM-240617
+Manufacturing Date: 2026-06-17
+Expiry Date: 2029-06-16
+Quantity Affected (kg): 25 kg
+Complaint Type: Product Quality
+Complaint Date: 2026-07-30
+Detailed Complaint Description: The supplied API container contains visible dark particulate matter. Please assess potential contamination before use.
