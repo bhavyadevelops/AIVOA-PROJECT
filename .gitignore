@@ -61,3 +61,6 @@ __pycache__/
 # Replit
 .cache/
 .local/
+
+.env
+*.env

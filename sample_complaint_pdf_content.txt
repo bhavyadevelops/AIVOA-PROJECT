@@ -1,0 +1,70 @@
+PHARMACEUTICAL COMPLAINT REPORT
+================================
+
+Complaint ID: PC-2026-0802-001
+Date Filed: August 2, 2026
+Status: Pending Investigation
+
+CUSTOMER INFORMATION
+--------------------
+Customer Name: Regional Medical Center
+Address: 123 Healthcare Boulevard, Medical District
+Contact: Dr. Sarah Johnson, Quality Assurance Manager
+Phone: (555) 123-4567
+Email: quality@regionalmedical.com
+
+COMPLAINT DETAILS
+-----------------
+Complaint Source: Phone Call
+Complaint Type: Product Quality Issue
+Complaint Date: August 2, 2026
+
+PRODUCT INFORMATION
+--------------------
+Product Name: Metformin Hydrochloride API
+Strength/Grade: IP/BP Grade
+Batch/Lot Number: CHG260712A
+Manufacturing Date: February 15, 2026
+Expiry Date: February 15, 2028
+Quantity: 50 kg
+Packaging: 2 HDPE drums
+
+COMPLAINT DESCRIPTION
+--------------------
+Regional Medical Center has reported a quality issue with Metformin Hydrochloride API, batch CHG260712A. During incoming quality inspection, the following issues were identified:
+
+1. Assay content: 97.8% (specification: 99.0-101.0%)
+2. Related substances: 1.2% (specification: ≤0.5%)
+3. Appearance: Slight yellow discoloration observed
+
+The affected quantity is 50 kg received in 2 HDPE drums. This batch does not meet IP/BP grade specifications and cannot be used for pharmaceutical manufacturing.
+
+The customer has requested immediate replacement and investigation into the root cause of this quality deviation.
+
+SEVERITY ASSESSMENT
+-------------------
+Severity: High
+Reason: Critical quality parameters (assay, related substances) are out of specification, which could impact product efficacy and patient safety.
+
+Priority: High
+Reason: This is a critical quality issue that requires immediate investigation and resolution to prevent potential patient harm.
+
+RECOMMENDED ACTIONS
+------------------
+1. Immediate QA investigation of batch CHG260712A
+2. Root cause analysis of manufacturing process
+3. Quality audit of production facility
+4. Issue replacement for 50 kg in 2 HDPE drums
+5. Review and test other batches from same production run
+6. Document all investigation findings and corrective actions
+7. Implement preventive measures to prevent recurrence
+
+INVESTIGATION NOTES
+-------------------
+- Batch CHG260712A was manufactured on February 15, 2026
+- Production line: Line B - API Manufacturing
+- Quality control: Passed initial QC but failed customer specifications
+- No other complaints received for this batch to date
+- Requires thorough investigation of raw materials and process parameters
+
+This complaint requires immediate attention due to potential impact on product quality and patient safety.

@@ -5,6 +5,7 @@ import { RootState, AppDispatch } from '@/store';
 import {
   extractComplaint,
   saveComplaint,
+  editComplaint,
   setComplaint,
   setRiskAssessment,
   setAiPopulatedFields,
@@ -168,6 +169,23 @@ export function useComplaintForm() {
     dispatch(reset());
   };
 
+  const handleEdit = (editMessage: string) => {
+    dispatch(editComplaint({ complaint: complaint as ComplaintFields, editMessage }))
+      .unwrap()
+      .then((result) => {
+        animateFieldPopulation(Object.keys(result.updatedComplaint) as Array<keyof ComplaintFields>);
+        toast({ title: 'Edit Complete', description: result.explanation });
+      })
+      .catch((err) => {
+        console.error('Edit error:', err);
+        toast({ 
+          title: 'Edit Failed', 
+          description: err?.message || 'Failed to edit complaint data.', 
+          variant: 'destructive' 
+        });
+      });
+  };
+
   // Clear error when component unmounts
   useEffect(() => {
     return () => {
@@ -190,5 +208,6 @@ export function useComplaintForm() {
     handleExtract,
     handleSave,
     handleReset,
+    handleEdit,
   };
 }

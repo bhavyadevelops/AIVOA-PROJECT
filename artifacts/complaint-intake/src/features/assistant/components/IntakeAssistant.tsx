@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import type { ComplaintFields, RiskAssessment } from '@/types';
 
 interface IntakeAssistantProps {
   onExtract: (text: string, documentName?: string, documentType?: string, file?: File) => void;
+  onEdit: (editMessage: string) => void;
   isExtracting: boolean;
   hasExtractedData: boolean;
   missingFields: string[];
@@ -32,14 +33,38 @@ const COPILOT_SUGGESTIONS = [
   'Recommend Next Steps',
 ];
 
-export function IntakeAssistant({ onExtract, isExtracting, hasExtractedData, missingFields, complaint, riskAssessment }: IntakeAssistantProps) {
+export function IntakeAssistant({ onExtract, onEdit, isExtracting, hasExtractedData, missingFields, complaint, riskAssessment }: IntakeAssistantProps) {
   const [inputText, setInputText] = useState('');
   const [chatInput, setChatInput] = useState('');
   const [isChatting, setIsChatting] = useState(false);
   const [lastChatResponse, setLastChatResponse] = useState('');
   const [currentStage, setCurrentStage] = useState(0);
   const [file, setFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const extractTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-extract on text input (debounced)
+  useEffect(() => {
+    if (extractTimeoutRef.current) {
+      clearTimeout(extractTimeoutRef.current);
+    }
+
+    // Only auto-extract if there's meaningful text and no file is uploaded
+    if (inputText.trim() && inputText.length > 50 && !file && !isExtracting) {
+      extractTimeoutRef.current = setTimeout(() => {
+        if (inputText.trim() && inputText.length > 50 && !file) {
+          handleExtract();
+        }
+      }, 1500); // 1.5 second delay to allow user to finish typing
+    }
+
+    return () => {
+      if (extractTimeoutRef.current) {
+        clearTimeout(extractTimeoutRef.current);
+      }
+    };
+  }, [inputText, file, isExtracting]);
 
   const handleExtract = () => {
     if (!inputText.trim() && !file) {
@@ -55,8 +80,21 @@ export function IntakeAssistant({ onExtract, isExtracting, hasExtractedData, mis
     
     simulateProgress();
     
-    // Pass everything to the parent component to handle via Redux
-    onExtract(inputText, file?.name, file?.name.split('.').pop(), file || undefined);
+    // If we have a file and it's a text-based file with meaningful content, use the text
+    // If it's a PDF/DOCX, pass the file to backend for processing
+    if (file) {
+      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+      if (['.pdf', '.docx'].includes(fileExtension)) {
+        // Pass the file for backend processing
+        onExtract('', file.name, fileExtension, file);
+      } else {
+        // Text-based file, use the extracted content
+        onExtract(inputText, file.name, fileExtension, file);
+      }
+    } else {
+      // Just text input, no file
+      onExtract(inputText);
+    }
   };
 
   const simulateProgress = () => {
@@ -76,12 +114,26 @@ export function IntakeAssistant({ onExtract, isExtracting, hasExtractedData, mis
     if (!chatInput.trim()) return;
     setIsChatting(true);
     
-    // Simulate chat response
-    setTimeout(() => {
-      setLastChatResponse(`Based on the complaint analysis, here's my assessment: The customer reported ${complaint.description || 'an issue'} with ${complaint.productName || 'a product'}. The risk level is ${riskAssessment?.overallRisk || 'being assessed'}.`);
-      setIsChatting(false);
+    // Check if this is an edit request
+    const editKeywords = ["sorry", "correct", "update", "change", "modify", "actually", "the batch number is", "the quantity is", "batch is", "quantity is"];
+    const isEditRequest = editKeywords.some(keyword => chatInput.toLowerCase().includes(keyword));
+    
+    if (isEditRequest && hasExtractedData) {
+      // Use the edit complaint tool
+      onEdit(chatInput);
+      setLastChatResponse(`Processing your edit: "${chatInput}"`);
       setChatInput('');
-    }, 1500);
+      setTimeout(() => {
+        setIsChatting(false);
+      }, 500);
+    } else {
+      // Regular chat response
+      setTimeout(() => {
+        setLastChatResponse(`Based on the complaint analysis, here's my assessment: The customer reported ${complaint.description || 'an issue'} with ${complaint.productName || 'a product'}. The risk level is ${riskAssessment?.overallRisk || 'being assessed'}.`);
+        setIsChatting(false);
+        setChatInput('');
+      }, 1500);
+    }
   };
 
   const handleSuggestion = (suggestion: string) => {
@@ -107,12 +159,34 @@ export function IntakeAssistant({ onExtract, isExtracting, hasExtractedData, mis
       }
 
       setFile(selectedFile);
-      // For text files, read directly; for PDF/DOCX, will be sent to backend
+      // For text files and EML, read directly; for PDF/DOCX, will be sent to backend
       if (['.txt', '.eml', '.csv'].includes(fileExtension)) {
         const reader = new FileReader();
         reader.onload = (event) => {
           const text = event.target?.result as string;
-          setInputText(text);
+          // For EML files, extract the email body content
+          if (fileExtension === '.eml') {
+            // Simple EML parsing: find the first empty line (end of headers) and take everything after
+            const headerEndIndex = text.indexOf('\n\n');
+            if (headerEndIndex !== -1) {
+              // Extract body after headers
+              let body = text.substring(headerEndIndex + 2);
+              // Remove common MIME boundaries and content declarations
+              body = body
+                .replace(/--=_[\w-]+--/g, '')
+                .replace(/Content-Type:[^\n]*/gi, '')
+                .replace(/Content-Transfer-Encoding:[^\n]*/gi, '')
+                .replace(/charset=[^\s]*/gi, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+              setInputText(body || text);
+            } else {
+              // No clear header separation, use full text
+              setInputText(text);
+            }
+          } else {
+            setInputText(text);
+          }
         };
         reader.onerror = () => {
           console.error('Error reading file');
@@ -123,17 +197,32 @@ export function IntakeAssistant({ onExtract, isExtracting, hasExtractedData, mis
         // For PDF/DOCX, just show the file name and let backend handle extraction
         setInputText(`File uploaded: ${selectedFile.name}`);
       }
+      
+      // Auto-trigger extraction for text files that have been read
+      if (['.txt', '.eml', '.csv'].includes(fileExtension)) {
+        setTimeout(() => {
+          handleExtract();
+        }, 500);
+      }
     }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsDragging(false);
     
     const droppedFile = e.dataTransfer.files?.[0];
     if (droppedFile) {
@@ -205,20 +294,21 @@ export function IntakeAssistant({ onExtract, isExtracting, hasExtractedData, mis
               )}
             </div>
             <div 
-              className="relative border-2 border-dashed border-slate-300 rounded-lg p-4"
+              className={`relative border-2 border-dashed rounded-lg p-4 transition-colors duration-200 ${isDragging ? 'border-primary bg-primary/5' : 'border-slate-300'}`}
               onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
               <Textarea
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder="Paste complaint text here or upload a file..."
+                placeholder="Paste complaint text here, upload a file, or drag & drop a file..."
                 className="min-h-32 resize-none border-0 focus-visible:ring-0"
               />
             </div>
             <Button 
               onClick={handleExtract} 
-              disabled={isExtracting || !inputText.trim()} 
+              disabled={isExtracting || (!inputText.trim() && !file)} 
               className="w-full gap-2"
             >
               {isExtracting ? (

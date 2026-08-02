@@ -100,6 +100,29 @@ export const saveComplaint = createAsyncThunk(
   }
 );
 
+export const editComplaint = createAsyncThunk(
+  'complaint/edit',
+  async (data: { complaint: ComplaintFields; editMessage: string }) => {
+    const response = await fetch('http://localhost:8000/api/complaints/edit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        complaint: data.complaint,
+        editMessage: data.editMessage
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Edit failed with status:', response.status);
+      console.error('Error response:', errorText);
+      throw new Error(`Failed to edit complaint: ${errorText}`);
+    }
+    
+    return response.json();
+  }
+);
+
 const complaintSlice = createSlice({
   name: 'complaint',
   initialState,
@@ -195,6 +218,29 @@ const complaintSlice = createSlice({
       .addCase(saveComplaint.rejected, (state, action) => {
         state.isSaving = false;
         state.error = action.error.message || 'Failed to save complaint';
+      })
+      // Edit complaint
+      .addCase(editComplaint.pending, (state) => {
+        state.isExtracting = true;
+        state.error = null;
+      })
+      .addCase(editComplaint.fulfilled, (state, action) => {
+        state.isExtracting = false;
+        state.complaint = action.payload.updatedComplaint;
+        state.riskAssessment = action.payload.updatedRiskAssessment;
+        
+        // Mark edited fields
+        const edited: (keyof ComplaintFields)[] = [];
+        Object.keys(action.payload.updatedComplaint).forEach((key) => {
+          if (action.payload.updatedComplaint[key as keyof ComplaintFields]) {
+            edited.push(key as keyof ComplaintFields);
+          }
+        });
+        state.editedFields = edited;
+      })
+      .addCase(editComplaint.rejected, (state, action) => {
+        state.isExtracting = false;
+        state.error = action.error.message || 'Failed to edit complaint';
       });
   },
 });

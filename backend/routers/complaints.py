@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from pydantic import BaseModel, EmailStr
 from database import get_db, Complaint
-from ai.graph import process_complaint
+from ai.graph import process_complaint, llm
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
 import json
 import PyPDF2
 from docx import Document
@@ -34,9 +36,40 @@ def extract_text_from_file(file_content: bytes, file_type: str) -> str:
             for paragraph in doc.paragraphs:
                 text += paragraph.text + "\n"
             return text
+        elif file_type == 'text':
+            # For text files including EML, CSV, TXT
+            try:
+                text = file_content.decode('utf-8')
+            except UnicodeDecodeError:
+                # Try other encodings if UTF-8 fails
+                text = file_content.decode('latin-1')
+            
+            # If it's an EML file, extract the body content
+            if text.lower().startswith('from:') or 'content-type: text/plain' in text.lower():
+                # Simple EML parsing - find the body after headers
+                lines = text.split('\n')
+                body_start = False
+                extracted_text = []
+                
+                for line in lines:
+                    if body_start:
+                        # Skip MIME boundaries and content declarations
+                        if not line.strip().startswith('--') and not line.strip().lower().startswith('content-'):
+                            extracted_text.append(line)
+                    elif line.strip() == '':
+                        # Empty line might indicate end of headers
+                        body_start = True
+                
+                if extracted_text:
+                    return '\n'.join(extracted_text).strip()
+            
+            return text
         else:
-            # For text files
-            return file_content.decode('utf-8')
+            # Default to text decoding
+            try:
+                return file_content.decode('utf-8')
+            except UnicodeDecodeError:
+                return file_content.decode('latin-1')
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to extract text from file: {str(e)}")
 
@@ -93,6 +126,17 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     reply: str
+    updatedComplaint: Optional[ComplaintField] = None
+    updatedRiskAssessment: Optional[RiskAssessment] = None
+
+class EditComplaintRequest(BaseModel):
+    complaint: ComplaintField
+    editMessage: str
+
+class EditComplaintResponse(BaseModel):
+    updatedComplaint: ComplaintField
+    updatedRiskAssessment: RiskAssessment
+    explanation: str
 
 @router.post("/extract", response_model=ExtractComplaintResponse)
 async def extract_complaint(
@@ -209,12 +253,77 @@ async def get_complaint(complaint_id: int, db: Session = Depends(get_db)):
 
 @router.post("/copilot/chat", response_model=ChatResponse)
 async def copilot_chat(request: ChatRequest):
-    """AI chat assistant for complaint analysis"""
+    """AI chat assistant for complaint analysis and editing"""
     try:
         complaint = request.complaint
         message = request.message
         
-        # Generate contextual response based on complaint data
+        # Check if this is an edit request (natural language editing)
+        edit_keywords = ["sorry", "correct", "update", "change", "modify", "actually", "the batch number is", "the quantity is", "batch is", "quantity is"]
+        is_edit_request = any(keyword in message.lower() for keyword in edit_keywords)
+        
+        if is_edit_request:
+            # Use AI to parse the edit request and update complaint fields
+            edit_prompt = ChatPromptTemplate.from_messages([
+                ("system", """You are a pharmaceutical complaint data editing expert. 
+Parse the user's edit message and identify which fields need to be updated in the complaint.
+Return ONLY valid JSON with the fields that should be updated:
+complaintSource, customerName, productName, strength, batch, manufacturingDate, expiryDate, 
+quantity, complaintType, complaintDate, description, severity, priority.
+
+Only include fields that are explicitly mentioned in the edit message. Use empty strings for fields not mentioned.
+Be precise and extract exact values from the user's message."""),
+                ("human", """Current complaint: {current_complaint}
+Edit message: {edit_message}""")
+            ])
+            
+            chain = edit_prompt | llm | JsonOutputParser()
+            
+            try:
+                updated_fields = chain.invoke({
+                    "current_complaint": complaint.model_dump(),
+                    "edit_message": message
+                })
+                
+                # Merge updated fields with current complaint
+                current_dict = complaint.model_dump()
+                for key, value in updated_fields.items():
+                    if value and value != "":  # Only update non-empty values
+                        current_dict[key] = value
+                
+                updated_complaint = ComplaintField(**current_dict)
+                
+                # Recalculate risk assessment if severity/priority changed
+                if "severity" in updated_fields or "priority" in updated_fields:
+                    severity = updated_complaint.severity or "Low"
+                    priority = updated_complaint.priority or "Low"
+                    
+                    updated_risk = RiskAssessment(
+                        overallRisk="High" if severity == "High" else "Medium" if priority == "High" else "Low",
+                        severityReason=f"Updated based on user correction: {severity}",
+                        priorityReason=f"Updated based on user correction: {priority}",
+                        patientSafety="Potential impact" if severity == "High" else "Minimal impact",
+                        productQuality="Under investigation",
+                        recommendedActions=["Immediate review", "Document findings"] if severity == "High" else ["Standard review"],
+                        confidenceNotes="Updated based on user edit"
+                    )
+                else:
+                    updated_risk = None
+                
+                explanation = f"Updated {', '.join(updated_fields.keys())} based on your edit request."
+                
+                return ChatResponse(
+                    reply=explanation,
+                    updatedComplaint=updated_complaint,
+                    updatedRiskAssessment=updated_risk
+                )
+                
+            except Exception as e:
+                print(f"Edit parsing error: {e}")
+                # Fallback to regular chat response
+                pass
+        
+        # Regular chat responses
         severity = complaint.severity or "Low"
         priority = complaint.priority or "Low"
         complaint_type = complaint.complaintType or "quality"
@@ -234,3 +343,69 @@ async def copilot_chat(request: ChatRequest):
         return ChatResponse(reply=reply)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
+
+@router.post("/edit", response_model=EditComplaintResponse)
+async def edit_complaint(request: EditComplaintRequest):
+    """Edit complaint using natural language - Edit Complaint Tool"""
+    try:
+        complaint = request.complaint
+        edit_message = request.editMessage
+        
+        # Use AI to parse the edit request and update complaint fields
+        edit_prompt = ChatPromptTemplate.from_messages([
+            ("system", """You are a pharmaceutical complaint data editing expert. 
+Parse the user's edit message and identify which fields need to be updated in the complaint.
+Return ONLY valid JSON with the fields that should be updated:
+complaintSource, customerName, productName, strength, batch, manufacturingDate, expiryDate, 
+quantity, complaintType, complaintDate, description, severity, priority.
+
+Only include fields that are explicitly mentioned in the edit message. Use empty strings for fields not mentioned.
+Be precise and extract exact values from the user's message."""),
+            ("human", """Current complaint: {current_complaint}
+Edit message: {edit_message}""")
+        ])
+        
+        chain = edit_prompt | llm | JsonOutputParser()
+        
+        try:
+            updated_fields = chain.invoke({
+                "current_complaint": complaint.model_dump(),
+                "edit_message": edit_message
+            })
+            
+            # Merge updated fields with current complaint
+            current_dict = complaint.model_dump()
+            for key, value in updated_fields.items():
+                if value and value != "":  # Only update non-empty values
+                    current_dict[key] = value
+            
+            updated_complaint = ComplaintField(**current_dict)
+            
+            # Recalculate risk assessment if severity/priority changed
+            severity = updated_complaint.severity or "Low"
+            priority = updated_complaint.priority or "Low"
+            
+            updated_risk = RiskAssessment(
+                overallRisk="High" if severity == "High" else "Medium" if priority == "High" else "Low",
+                severityReason=f"Updated based on user correction: {severity}",
+                priorityReason=f"Updated based on user correction: {priority}",
+                patientSafety="Potential impact" if severity == "High" else "Minimal impact",
+                productQuality="Under investigation",
+                recommendedActions=["Immediate review", "Document findings"] if severity == "High" else ["Standard review"],
+                confidenceNotes="Updated based on user edit"
+            )
+            
+            explanation = f"Updated {', '.join(updated_fields.keys())} based on your edit request: '{edit_message}'"
+            
+            return EditComplaintResponse(
+                updatedComplaint=updated_complaint,
+                updatedRiskAssessment=updated_risk,
+                explanation=explanation
+            )
+            
+        except Exception as e:
+            print(f"Edit parsing error: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to parse edit request: {str(e)}")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Edit failed: {str(e)}")

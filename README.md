@@ -84,22 +84,46 @@ GROQ_API_KEY=your_groq_api_key_here
 ## Project Structure
 
 ```
-artifacts/
-├── complaint-intake/    # React frontend
-│   ├── src/
-│   │   ├── components/ # UI components
-│   │   ├── features/    # Feature modules
-│   │   ├── store/      # Redux store
-│   │   └── pages/      # Page components
-│   └── package.json
-backend/                # Python FastAPI backend
-├── ai/                 # LangGraph AI agents
-│   └── graph.py       # Complaint processing workflow
-├── routers/           # API endpoints
-│   ├── complaints.py  # Complaint operations
-│   └── health.py      # Health check
-├── database.py        # SQLAlchemy models
-└── main.py           # FastAPI application
+AIVOA-CMS-main/
+├── artifacts/              # Frontend and alternative backend implementations
+│   ├── api-server/        # Node.js/Express API server (alternative implementation)
+│   │   ├── src/
+│   │   │   ├── ai/        # LangGraph TypeScript implementation
+│   │   │   │   ├── nodes/ # AI workflow nodes
+│   │   │   │   ├── prompts/ # AI prompt templates
+│   │   │   │   └── services/ # AI service integrations
+│   │   │   ├── routes/    # API route handlers
+│   │   │   └── lib/       # Utility libraries
+│   │   └── package.json
+│   ├── complaint-intake/  # React frontend application
+│   │   ├── src/
+│   │   │   ├── components/ # React components
+│   │   │   │   └── ui/    # Radix UI components
+│   │   │   ├── features/  # Feature modules
+│   │   │   │   └── complaint/ # Complaint-specific components
+│   │   │   ├── store/     # Redux store configuration
+│   │   │   └── pages/     # Page components
+│   │   ├── public/
+│   │   │   └── fixtures/  # Test data files
+│   │   └── package.json
+│   └── mockup-sandbox/    # Design mockups and prototypes
+├── backend/               # Python FastAPI backend (primary implementation)
+│   ├── ai/               # LangGraph AI agents
+│   │   ├── graph.py      # Complaint processing workflow
+│   │   ├── nodes.py      # Individual agent implementations
+│   │   └── prompts.py    # AI prompt templates
+│   ├── routers/          # API endpoints
+│   │   ├── complaints.py # Complaint operations
+│   │   └── health.py     # Health check
+│   ├── database.py       # SQLAlchemy models
+│   └── main.py          # FastAPI application
+├── shared/               # Shared utilities and types
+│   ├── constants/       # Shared constants
+│   └── types/          # TypeScript type definitions
+├── scripts/             # Build and deployment scripts
+├── lib/                 # Shared libraries
+├── attached_assets/     # External assets and documentation
+└── AGENTS.md           # Detailed technical architecture documentation
 ```
 
 ## API Endpoints
@@ -194,12 +218,63 @@ cd ../artifacts/complaint-intake
 pnpm run serve
 ```
 
+## Development Workflow
+
+### Code Organization
+
+This project contains both Python (FastAPI) and Node.js (Express) backend implementations:
+
+- **backend/**: Primary Python FastAPI implementation with LangGraph
+- **artifacts/api-server/**: Alternative Node.js/Express implementation
+- **artifacts/complaint-intake/**: React frontend that works with either backend
+
+### Running the Application
+
+#### Option 1: Python Backend (Recommended)
+```bash
+# Terminal 1: Start Python backend
+cd backend
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+# Terminal 2: Start React frontend
+cd artifacts/complaint-intake
+pnpm run dev
+```
+
+#### Option 2: Node.js Backend
+```bash
+# Terminal 1: Start Node.js backend
+cd artifacts/api-server
+pnpm run dev
+
+# Terminal 2: Start React frontend
+cd complaint-intake
+pnpm run dev
+```
+
+### Development Tools
+
+- **TypeScript**: Full type safety across frontend and Node.js backend
+- **ESLint/Prettier**: Code formatting and linting
+- **Pydantic**: Runtime validation for Python backend
+- **Redux DevTools**: State management debugging
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Groq API Key Missing**: Set `GROQ_API_KEY` in backend/.env
+2. **Database Connection Failed**: Verify PostgreSQL is running and DATABASE_URL is correct
+3. **Port Already in Use**: Change port in uvicorn command or frontend vite config
+4. **AI Extraction Fails**: Check Groq API status and fallback parser is working
+
 ## Contributing
 
 1. Run type checking before committing
 2. Follow existing code style
 3. Add tests for new features
 4. Update documentation as needed
+5. Ensure both Python and Node.js implementations remain in sync
 
 ## License
 

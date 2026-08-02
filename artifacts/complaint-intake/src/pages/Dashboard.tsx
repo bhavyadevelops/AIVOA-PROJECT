@@ -17,6 +17,7 @@ export default function Dashboard() {
     handleExtract,
     handleSave,
     handleReset,
+    handleEdit,
   } = useComplaintForm();
 
   return (
@@ -36,6 +37,7 @@ export default function Dashboard() {
       <div className="w-full lg:w-[40%] h-[50dvh] lg:h-full bg-slate-50 flex flex-col relative">
         <IntakeAssistant 
           onExtract={handleExtract}
+          onEdit={handleEdit}
           isExtracting={isExtracting}
           hasExtractedData={aiPopulatedFields.length > 0}
           missingFields={missingFields}

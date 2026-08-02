@@ -1,0 +1,36 @@
+From: quality@apollopharmacy.com
+To: complaints@aivoa-cms.com
+Subject: Quality Complaint - Discolored Capsules
+
+Date: August 2, 2026
+
+Customer Name: Apollo Pharmacy
+Complaint Source: Email
+Complaint Type: Quality Issue
+Complaint Date: 2026-08-02
+
+Product Name: Amoxicylin Capsules
+Strength: 500 mg
+Batch Number: BMX24602
+Manufacturing Date: 2024-06-15
+Expiry Date: 2026-06-15
+Quantity: 48 capsules
+
+Description: 
+We received a complaint from Apollo Pharmacy regarding discolored capsules in batch BMX24602 of Amoxicylin Capsules 500 mg. The customer reported that the capsules appear to have yellow discoloration on the outer shell, which is not consistent with the expected white color. The affected quantity is 48 capsules from the received shipment.
+
+The customer has expressed concern about potential quality issues and requested immediate investigation into this matter. This may affect product efficacy and patient safety if the discoloration indicates product degradation.
+
+Please investigate this quality complaint and provide appropriate resolution.
+
+Severity: High
+Priority: High
+
+Recommended Actions:
+1. Immediate quality investigation
+2. Route to QA investigation
+3. Issue replacement for affected quantity
+4. Check remaining stock from same batch
+5. Document findings and investigation results
+
+This is a quality complaint that requires immediate attention due to potential patient safety impact.
