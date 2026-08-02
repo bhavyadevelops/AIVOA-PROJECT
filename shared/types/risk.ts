@@ -1,25 +1,21 @@
 export interface RiskAssessment {
   overallRisk: string;
-  severityRationale: string;
-  priorityRationale: string;
-  patientSafetyImpact: string;
-  productQualityImpact: string;
+  severityReason: string;
+  priorityReason: string;
+  patientSafety: string;
+  productQuality: string;
   recommendedActions: string[];
   confidenceNotes: string;
-  explanation?: string[];
-  completenessWarnings?: string[];
 }
 
 export function createEmptyRiskAssessment(): RiskAssessment {
   return {
     overallRisk: "Low",
-    severityRationale: "",
-    priorityRationale: "",
-    patientSafetyImpact: "",
-    productQualityImpact: "",
+    severityReason: "",
+    priorityReason: "",
+    patientSafety: "",
+    productQuality: "",
     recommendedActions: [],
     confidenceNotes: "",
-    explanation: [],
-    completenessWarnings: [],
   };
 }

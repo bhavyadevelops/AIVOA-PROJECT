@@ -1,41 +1,34 @@
-import type { ComplaintGraphState } from "../state";
-import { createEmptyRiskAssessment } from "../../../../../shared/types";
+import { createGroqClient } from "../services/groq";
+import { RISK_PROMPT } from "../prompts/risk";
+import { createEmptyRiskAssessment } from "@workspace/shared-types";
 
-export function classifyRiskNode(state: ComplaintGraphState): ComplaintGraphState {
-  const lower = `${state.complaint.complaintType} ${state.complaint.description}`.toLowerCase();
-  const severe = /contamin|foreign particle|adverse|patient/.test(lower);
-  const major = /damaged|crack|defect|packag|discolor|out.?of.?spec/.test(lower);
-  const riskAssessment = createEmptyRiskAssessment();
+export function classifyRiskNode(state: any): any {
+  const fallback = createEmptyRiskAssessment();
+  if (!process.env.GROQ_API_KEY) {
+    return {
+      ...state,
+      riskAssessment: { ...fallback, ...state.riskAssessment },
+      processingSteps: [...state.processingSteps, "Used fallback risk classification"],
+    };
+  }
 
-  riskAssessment.overallRisk = severe ? "High" : major ? "Medium" : "Low";
-  riskAssessment.severityRationale = severe
-    ? "Complaint signals a credible potential patient safety impact and requires immediate evaluation."
-    : major
-      ? "The reported defect could affect product integrity and should be triaged promptly."
-      : "Available details indicate a limited quality concern with no stated patient impact.";
-  riskAssessment.priorityRationale = severe
-    ? "Urgent review is required to protect patients and preserve affected product."
-    : major
-      ? "High-priority quality review is recommended before further distribution decisions."
-      : "Routine quality triage is appropriate with follow-up for missing context.";
-  riskAssessment.patientSafetyImpact = severe
-    ? "Potential patient safety impact — hold and assess affected material."
-    : major
-      ? "No confirmed patient harm; product integrity concern requires evaluation."
-      : "No patient safety impact identified from the submitted information.";
-  riskAssessment.productQualityImpact = severe || major
-    ? "Potential impact to product quality and packaging integrity."
-    : "Limited product quality impact identified from the submitted information.";
-  riskAssessment.recommendedActions = severe
-    ? ["Quarantine affected batch immediately", "Escalate to Quality Assurance", "Assess distribution and patient exposure"]
-    : major
-      ? ["Open quality assessment", "Review batch and packaging records", "Request supporting photographs or samples"]
-      : ["Confirm missing complaint details", "Complete routine quality review"];
-  riskAssessment.confidenceNotes = "Assessment is generated from the supplied complaint text. Verify all fields and conclusions before disposition.";
+  // For now, use a simple heuristic-based classification
+  const severity = state.complaint.severity || "Low";
+  const priority = state.complaint.priority || "Low";
+  
+  const riskAssessment = {
+    overallRisk: severity === "High" ? "High" : priority === "High" ? "Medium" : "Low",
+    severityReason: `Based on reported severity: ${severity}`,
+    priorityReason: `Based on reported priority: ${priority}`,
+    patientSafety: severity === "High" ? "Potential impact" : "Minimal impact",
+    productQuality: "Under investigation",
+    recommendedActions: severity === "High" ? ["Immediate review", "Document findings"] : ["Standard review"],
+    confidenceNotes: "Classification based on extracted field values",
+  };
 
   return {
     ...state,
-    riskAssessment,
+    riskAssessment: { ...fallback, ...state.riskAssessment, ...riskAssessment },
     processingSteps: [...state.processingSteps, "Classified risk"],
   };
 }

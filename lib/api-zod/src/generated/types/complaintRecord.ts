@@ -14,6 +14,7 @@ export interface ComplaintRecord {
   riskAssessment: RiskAssessment;
   documentName?: string;
   documentType?: string;
+  status: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -1,9 +1,9 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db, complaintsTable } from "@workspace/db";
 import { CreateComplaintBody } from "@workspace/api-zod";
 
-const router: IRouter = Router();
+const router = Router();
 
 router.post("/complaints", async (req, res): Promise<void> => {
   const parsed = CreateComplaintBody.safeParse(req.body);
@@ -17,6 +17,7 @@ router.post("/complaints", async (req, res): Promise<void> => {
     riskAssessment: parsed.data.riskAssessment,
     documentName: parsed.data.documentName || null,
     documentType: parsed.data.documentType || null,
+    status: "Pending Triage",
   }).returning();
 
   res.status(201).json({

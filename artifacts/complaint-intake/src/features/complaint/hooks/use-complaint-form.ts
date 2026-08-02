@@ -1,53 +1,93 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useExtractComplaint, useCreateComplaint } from '@workspace/api-client-react';
-import type { ComplaintFields, RiskAssessment } from '@workspace/api-client-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState, AppDispatch } from '@/store';
+import {
+  extractComplaint,
+  saveComplaint,
+  setComplaint,
+  setRiskAssessment,
+  setAiPopulatedFields,
+  setEditedFields,
+  setAnimatingFields,
+  addAnimatingField,
+  removeAnimatingField,
+  reset,
+  clearError,
+} from '@/store/complaintSlice';
+import type { ComplaintFields, RiskAssessment } from '@/store/complaintSlice';
 
 export function useComplaintForm() {
   const { toast } = useToast();
-  const { mutate: extractComplaint, isPending: isExtracting } = useExtractComplaint();
-  const { mutate: saveComplaint, isPending: isSaving } = useCreateComplaint();
-
-  const [complaint, setComplaint] = useState<Partial<ComplaintFields>>({});
-  const [riskAssessment, setRiskAssessment] = useState<RiskAssessment | null>(null);
-  const [missingFields, setMissingFields] = useState<string[]>([]);
-  const [aiPopulatedFields, setAiPopulatedFields] = useState<Set<keyof ComplaintFields>>(new Set());
-  const [editedFields, setEditedFields] = useState<Set<keyof ComplaintFields>>(new Set());
+  const dispatch = useDispatch<AppDispatch>();
+  
+  const {
+    complaint,
+    riskAssessment,
+    missingFields,
+    aiPopulatedFields,
+    editedFields,
+    animatingFields,
+    isExtracting,
+    isSaving,
+    error,
+  } = useSelector((state: RootState) => state.complaint);
 
   const handleFieldChange = (field: keyof ComplaintFields, value: string) => {
-    setComplaint((prev) => ({ ...prev, [field]: value }));
+    dispatch(setComplaint({ [field]: value }));
     if (aiPopulatedFields.has(field)) {
-      setEditedFields((prev) => {
-        const next = new Set(prev);
-        next.add(field);
-        return next;
-      });
+      dispatch(addEditedField(field));
     }
   };
 
+  const animateFieldPopulation = useCallback((fields: Array<keyof ComplaintFields>) => {
+    fields.forEach((field, index) => {
+      setTimeout(() => {
+        dispatch(addAnimatingField(field));
+        
+        setTimeout(() => {
+          dispatch(removeAnimatingField(field));
+        }, 500);
+      }, index * 100);
+    });
+  }, [dispatch]);
+
   const handleExtract = (text: string) => {
-    extractComplaint(
-      { data: { text } },
-      {
-        onSuccess: (result: { complaint: Partial<ComplaintFields>; riskAssessment: RiskAssessment | null; missingFields?: string[] }) => {
-          setComplaint(result.complaint);
-          setRiskAssessment(result.riskAssessment);
-          setMissingFields(result.missingFields || []);
-
-          const populated = new Set<keyof ComplaintFields>();
-          (Object.keys(result.complaint) as Array<keyof ComplaintFields>).forEach((key) => {
-            if (result.complaint[key]) populated.add(key);
+    dispatch(extractComplaint({ text }))
+      .unwrap()
+      .then((result) => {
+        // The reducer handles state updates
+        animateFieldPopulation(Object.keys(result.complaint) as Array<keyof ComplaintFields>);
+        toast({ title: 'Extraction Complete', description: 'Complaint fields have been populated by AI.' });
+      })
+      .catch((err) => {
+        console.error('Extraction error:', err);
+        if (err?.response?.status === 503) {
+          toast({ 
+            title: 'Service Unavailable', 
+            description: 'AI service is temporarily unavailable. Please try again later.', 
+            variant: 'destructive' 
           });
-          setAiPopulatedFields(populated);
-          setEditedFields(new Set());
-
-          toast({ title: 'Extraction Complete', description: 'Complaint fields have been populated by AI.' });
-        },
-        onError: () => {
-          toast({ title: 'Extraction Failed', description: 'Failed to extract complaint data.', variant: 'destructive' });
-        },
-      },
-    );
+        } else if (err?.response?.status === 401) {
+          toast({ 
+            title: 'Authentication Error', 
+            description: 'Invalid API key configuration.', 
+            variant: 'destructive' 
+          });
+        } else if (err?.code === 'ECONNREFUSED' || err?.code === 'NETWORK_ERROR') {
+          toast({ 
+            title: 'Connection Error', 
+            description: 'Unable to connect to the server. Please check your connection.', 
+            variant: 'destructive' 
+          });
+        } else {
+          toast({ 
+            title: 'Extraction Failed', 
+            description: err?.message || 'Failed to extract complaint data.', 
+            variant: 'destructive' 
+          });
+        }
+      });
   };
 
   const handleSave = () => {
@@ -56,27 +96,48 @@ export function useComplaintForm() {
       return;
     }
 
-    saveComplaint(
-      { data: { complaint: complaint as ComplaintFields, riskAssessment: riskAssessment! } },
-      {
-        onSuccess: () => {
-          toast({ title: 'Success', description: 'Complaint saved successfully.' });
-          handleReset();
-        },
-        onError: () => {
-          toast({ title: 'Error', description: 'Failed to save complaint.', variant: 'destructive' });
-        },
-      },
-    );
+    dispatch(saveComplaint({ complaint: complaint as ComplaintFields, riskAssessment: riskAssessment! }))
+      .unwrap()
+      .then(() => {
+        toast({ title: 'Success', description: 'Complaint saved successfully.' });
+        dispatch(reset());
+      })
+      .catch((err) => {
+        console.error('Save error:', err);
+        if (err?.response?.status === 503) {
+          toast({ 
+            title: 'Service Unavailable', 
+            description: 'Database service is temporarily unavailable. Please try again later.', 
+            variant: 'destructive' 
+          });
+        } else if (err?.code === 'ECONNREFUSED' || err?.code === 'NETWORK_ERROR') {
+          toast({ 
+            title: 'Connection Error', 
+            description: 'Unable to connect to the server. Please check your connection.', 
+            variant: 'destructive' 
+          });
+        } else {
+          toast({ 
+            title: 'Error', 
+            description: err?.message || 'Failed to save complaint.', 
+            variant: 'destructive' 
+          });
+        }
+      });
   };
 
   const handleReset = () => {
-    setComplaint({});
-    setRiskAssessment(null);
-    setMissingFields([]);
-    setAiPopulatedFields(new Set());
-    setEditedFields(new Set());
+    dispatch(reset());
   };
+
+  // Clear error when component unmounts
+  useEffect(() => {
+    return () => {
+      if (error) {
+        dispatch(clearError());
+      }
+    };
+  }, [error, dispatch]);
 
   return {
     complaint,
@@ -84,6 +145,7 @@ export function useComplaintForm() {
     missingFields,
     aiPopulatedFields,
     editedFields,
+    animatingFields,
     isExtracting,
     isSaving,
     handleFieldChange,

@@ -3,11 +3,10 @@ import { extractFieldsNode } from "./nodes/extract-fields";
 import { classifyRiskNode } from "./nodes/classify-risk";
 import { summarizeNode } from "./nodes/summarize";
 import { completenessNode } from "./nodes/completeness";
-import type { ComplaintGraphInput, ComplaintGraphState } from "./state";
-import { createEmptyComplaintFields, createEmptyRiskAssessment } from "../../../../shared/types";
+import { createEmptyComplaintFields, createEmptyRiskAssessment } from "@workspace/shared-types";
 
-export async function buildComplaintGraph(input: ComplaintGraphInput): Promise<ComplaintGraphState> {
-  let state: ComplaintGraphState = {
+export async function buildComplaintGraph(input: any): Promise<any> {
+  let state = {
     text: input.text,
     documentName: input.documentName,
     documentType: input.documentType,

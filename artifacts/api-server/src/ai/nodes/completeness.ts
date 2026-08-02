@@ -1,5 +1,3 @@
-import type { ComplaintGraphState } from "../state";
-
 const REQUIRED_FIELDS = [
   ["customerName", "Customer Name"],
   ["productName", "Product Name"],
@@ -8,8 +6,8 @@ const REQUIRED_FIELDS = [
   ["quantity", "Quantity"],
 ];
 
-export function completenessNode(state: ComplaintGraphState): ComplaintGraphState {
-  const missingFields = REQUIRED_FIELDS.filter(([key]) => !state.complaint[key as keyof typeof state.complaint]).map(([, label]) => label);
+export function completenessNode(state: any): any {
+  const missingFields = REQUIRED_FIELDS.filter(([key]) => !state.complaint[key]).map(([, label]) => label);
 
   return {
     ...state,

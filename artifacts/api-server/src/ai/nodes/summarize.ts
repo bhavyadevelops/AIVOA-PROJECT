@@ -1,12 +1,6 @@
-import type { ComplaintGraphState } from "../state";
-
-export function summarizeNode(state: ComplaintGraphState): ComplaintGraphState {
-  const summary = [
-    state.complaint.complaintType || "Complaint",
-    state.complaint.productName || "product",
-    state.riskAssessment.overallRisk || "Low",
-  ].join(" - ");
-
+export function summarizeNode(state: any): any {
+  const summary = `Complaint regarding ${state.complaint.productName || "unknown product"} (${state.complaint.strength || "unknown strength"}). Reported by ${state.complaint.customerName || "unknown customer"}. ${state.complaint.description || "No description provided."}`;
+  
   return {
     ...state,
     summary,

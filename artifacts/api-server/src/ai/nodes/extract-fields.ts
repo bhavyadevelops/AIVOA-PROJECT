@@ -1,10 +1,9 @@
-import type { ComplaintGraphState } from "../state";
 import { createGroqClient } from "../services/groq";
 import { validateComplaintFields } from "../services/validators";
 import { EXTRACTION_PROMPT } from "../prompts/extraction";
-import { createEmptyComplaintFields } from "../../../../../shared/types";
+import { createEmptyComplaintFields } from "@workspace/shared-types";
 
-export async function extractFieldsNode(state: ComplaintGraphState): Promise<ComplaintGraphState> {
+export async function extractFieldsNode(state: any): Promise<any> {
   const fallback = createEmptyComplaintFields();
   if (!process.env.GROQ_API_KEY) {
     return {

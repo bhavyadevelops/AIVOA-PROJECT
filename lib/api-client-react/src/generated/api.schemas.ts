@@ -36,7 +36,8 @@ export interface RiskAssessment {
   productQualityImpact: string;
   recommendedActions: string[];
   confidenceNotes: string;
-  explanation: string[];
+  explanation?: string[];
+  completenessWarnings?: string[];
 }
 
 export interface ExtractionResult {
@@ -69,6 +70,7 @@ export interface ComplaintRecord {
   riskAssessment: RiskAssessment;
   documentName?: string;
   documentType?: string;
+  status: string;
   createdAt: string;
   updatedAt: string;
 }

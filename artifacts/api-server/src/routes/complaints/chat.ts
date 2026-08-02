@@ -1,7 +1,7 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import { ComplaintCopilotChatBody } from "@workspace/api-zod";
 
-const router: IRouter = Router();
+const router = Router();
 
 router.post("/copilot/chat", async (req, res): Promise<void> => {
   const parsed = ComplaintCopilotChatBody.safeParse(req.body);

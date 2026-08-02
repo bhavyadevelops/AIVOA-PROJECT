@@ -1,8 +1,8 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import { ExtractComplaintBody } from "@workspace/api-zod";
 import { buildComplaintGraph } from "../../ai";
 
-const router: IRouter = Router();
+const router = Router();
 
 router.post("/extract", async (req, res): Promise<void> => {
   const parsed = ExtractComplaintBody.safeParse(req.body);

@@ -10,6 +10,7 @@ export default function Dashboard() {
     missingFields,
     aiPopulatedFields,
     editedFields,
+    animatingFields,
     isExtracting,
     isSaving,
     handleFieldChange,
@@ -23,9 +24,9 @@ export default function Dashboard() {
       <div className="w-full lg:w-[60%] h-[50dvh] lg:h-full border-b lg:border-b-0 lg:border-r border-slate-200 bg-white flex flex-col relative z-10 shadow-sm">
         <ComplaintForm 
           complaint={complaint}
-          riskAssessment={riskAssessment}
           aiPopulatedFields={aiPopulatedFields}
           editedFields={editedFields}
+          animatingFields={animatingFields}
           onFieldChange={handleFieldChange}
           onSave={handleSave}
           onReset={handleReset}

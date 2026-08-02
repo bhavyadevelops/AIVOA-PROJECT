@@ -14,5 +14,6 @@ export interface RiskAssessment {
   productQualityImpact: string;
   recommendedActions: string[];
   confidenceNotes: string;
-  explanation: string[];
+  explanation?: string[];
+  completenessWarnings?: string[];
 }

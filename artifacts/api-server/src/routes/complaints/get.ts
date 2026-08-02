@@ -1,9 +1,9 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db, complaintsTable } from "@workspace/db";
 import { GetComplaintParams } from "@workspace/api-zod";
 
-const router: IRouter = Router();
+const router = Router();
 
 router.get("/complaints/:id", async (req, res): Promise<void> => {
   const params = GetComplaintParams.safeParse(req.params);
