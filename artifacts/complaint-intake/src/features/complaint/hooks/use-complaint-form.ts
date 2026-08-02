@@ -10,6 +10,7 @@ import {
   setAiPopulatedFields,
   setEditedFields,
   setAnimatingFields,
+  addEditedField,
   addAnimatingField,
   removeAnimatingField,
   reset,
@@ -35,7 +36,7 @@ export function useComplaintForm() {
 
   const handleFieldChange = (field: keyof ComplaintFields, value: string) => {
     dispatch(setComplaint({ [field]: value }));
-    if (aiPopulatedFields.has(field)) {
+    if (aiPopulatedFields.includes(field)) {
       dispatch(addEditedField(field));
     }
   };
@@ -52,42 +53,79 @@ export function useComplaintForm() {
     });
   }, [dispatch]);
 
-  const handleExtract = (text: string) => {
-    dispatch(extractComplaint({ text }))
-      .unwrap()
-      .then((result) => {
-        // The reducer handles state updates
-        animateFieldPopulation(Object.keys(result.complaint) as Array<keyof ComplaintFields>);
-        toast({ title: 'Extraction Complete', description: 'Complaint fields have been populated by AI.' });
-      })
-      .catch((err) => {
-        console.error('Extraction error:', err);
-        if (err?.response?.status === 503) {
-          toast({ 
-            title: 'Service Unavailable', 
-            description: 'AI service is temporarily unavailable. Please try again later.', 
-            variant: 'destructive' 
-          });
-        } else if (err?.response?.status === 401) {
-          toast({ 
-            title: 'Authentication Error', 
-            description: 'Invalid API key configuration.', 
-            variant: 'destructive' 
-          });
-        } else if (err?.code === 'ECONNREFUSED' || err?.code === 'NETWORK_ERROR') {
-          toast({ 
-            title: 'Connection Error', 
-            description: 'Unable to connect to the server. Please check your connection.', 
-            variant: 'destructive' 
-          });
-        } else {
-          toast({ 
-            title: 'Extraction Failed', 
-            description: err?.message || 'Failed to extract complaint data.', 
-            variant: 'destructive' 
-          });
-        }
-      });
+  const handleExtract = (text: string, documentName?: string, documentType?: string, file?: File) => {
+    // For PDF/DOCX files, pass the file directly; for text files, pass the text
+    if (file && (file.name.endsWith('.pdf') || file.name.endsWith('.docx'))) {
+      dispatch(extractComplaint({ text: '', documentName: file.name, documentType: file.name.split('.').pop(), file }))
+        .unwrap()
+        .then((result) => {
+          animateFieldPopulation(Object.keys(result.complaint) as Array<keyof ComplaintFields>);
+          toast({ title: 'Extraction Complete', description: 'Complaint fields have been populated by AI.' });
+        })
+        .catch((err) => {
+          console.error('Extraction error:', err);
+          if (err?.response?.status === 503) {
+            toast({ 
+              title: 'Service Unavailable', 
+              description: 'AI service is temporarily unavailable. Please try again later.', 
+              variant: 'destructive' 
+            });
+          } else if (err?.response?.status === 401) {
+            toast({ 
+              title: 'Authentication Error', 
+              description: 'Invalid API key configuration.', 
+              variant: 'destructive' 
+            });
+          } else if (err?.code === 'ECONNREFUSED' || err?.code === 'NETWORK_ERROR') {
+            toast({ 
+              title: 'Connection Error', 
+              description: 'Unable to connect to the server. Please check your connection.', 
+              variant: 'destructive' 
+            });
+          } else {
+            toast({ 
+              title: 'Extraction Failed', 
+              description: err?.message || 'Failed to extract complaint data.', 
+              variant: 'destructive' 
+            });
+          }
+        });
+    } else {
+      dispatch(extractComplaint({ text, documentName, documentType }))
+        .unwrap()
+        .then((result) => {
+          animateFieldPopulation(Object.keys(result.complaint) as Array<keyof ComplaintFields>);
+          toast({ title: 'Extraction Complete', description: 'Complaint fields have been populated by AI.' });
+        })
+        .catch((err) => {
+          console.error('Extraction error:', err);
+          if (err?.response?.status === 503) {
+            toast({ 
+              title: 'Service Unavailable', 
+              description: 'AI service is temporarily unavailable. Please try again later.', 
+              variant: 'destructive' 
+            });
+          } else if (err?.response?.status === 401) {
+            toast({ 
+              title: 'Authentication Error', 
+              description: 'Invalid API key configuration.', 
+              variant: 'destructive' 
+            });
+          } else if (err?.code === 'ECONNREFUSED' || err?.code === 'NETWORK_ERROR') {
+            toast({ 
+              title: 'Connection Error', 
+              description: 'Unable to connect to the server. Please check your connection.', 
+              variant: 'destructive' 
+            });
+          } else {
+            toast({ 
+              title: 'Extraction Failed', 
+              description: err?.message || 'Failed to extract complaint data.', 
+              variant: 'destructive' 
+            });
+          }
+        });
+    }
   };
 
   const handleSave = () => {

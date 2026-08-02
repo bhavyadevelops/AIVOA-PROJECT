@@ -46,6 +46,15 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.db
+*.sqlite
+
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 

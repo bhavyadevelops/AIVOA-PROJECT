@@ -9,6 +9,7 @@ export const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST'],
+        ignoredPaths: ['complaint.aiPopulatedFields', 'complaint.editedFields', 'complaint.animatingFields'],
       },
     }),
 });

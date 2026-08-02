@@ -29,7 +29,7 @@
 
 **LangGraph**: Required by assignment. Enables multi-agent workflows with state management, checkpointing, and visualizable graph structure.
 
-**Groq gemma2-9b-it**: Required by assignment. Fast, affordable AI inference with good medical/technical model availability.
+**Groq llama-3.3-70b-versatile**: Fast, affordable AI inference (gemma2-9b-it was decommissioned by Groq).
 
 **PostgreSQL + SQLAlchemy**: Required by assignment. Relational database with type-safe ORM and JSONB support.
 
@@ -109,7 +109,7 @@ complaint_graph = workflow.compile()
 ```
 
 ### Groq Integration
-- **Model**: gemma2-9b-it (required by assignment)
+- **Model**: llama-3.3-70b-versatile (gemma2-9b-it was decommissioned by Groq)
 - **Temperature**: 0 (deterministic outputs)
 - **Response Format**: JSON (structured data extraction)
 - **Fallback**: Heuristic-based parser when API key unavailable

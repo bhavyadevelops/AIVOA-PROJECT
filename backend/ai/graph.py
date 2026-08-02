@@ -20,7 +20,7 @@ class ComplaintState(TypedDict):
 
 # Initialize Groq LLM
 llm = ChatGroq(
-    model="gemma2-9b-it",
+    model="llama-3.3-70b-versatile",
     temperature=0,
     api_key=os.getenv("GROQ_API_KEY")
 )
@@ -47,6 +47,10 @@ Extract the following fields from the complaint text and return ONLY valid JSON:
 complaintSource, customerName, productName, strength, batch, manufacturingDate, expiryDate, 
 quantity, complaintType, complaintDate, description, severity, priority.
 
+Classification rules:
+- severity: Classify as "High" if complaint mentions adverse reactions, patient harm, safety issues, or life-threatening conditions. Classify as "Medium" for quality issues, efficacy problems, or customer dissatisfaction. Classify as "Low" for minor issues, packaging problems, or administrative concerns.
+- priority: Classify as "High" for severity "High" or urgent complaints. Classify as "Medium" for severity "Medium" or complaints requiring investigation. Classify as "Low" for severity "Low" or routine matters.
+
 Use empty strings for unknown fields. Be precise and accurate."""),
         ("human", "{text}")
     ])
@@ -55,6 +59,29 @@ Use empty strings for unknown fields. Be precise and accurate."""),
     
     try:
         complaint_data = chain.invoke({"text": state["text"]})
+        
+        # Fallback classification if AI doesn't extract severity/priority
+        if not complaint_data.get("severity") or not complaint_data.get("priority"):
+            text_lower = state["text"].lower()
+            
+            # Classify severity
+            if not complaint_data.get("severity"):
+                if any(keyword in text_lower for keyword in ["adverse", "harm", "dangerous", "life-threatening", "death", "severe", "serious", "emergency"]):
+                    complaint_data["severity"] = "High"
+                elif any(keyword in text_lower for keyword in ["quality", "efficacy", "dissatisfaction", "concern", "problem", "issue"]):
+                    complaint_data["severity"] = "Medium"
+                else:
+                    complaint_data["severity"] = "Low"
+            
+            # Classify priority
+            if not complaint_data.get("priority"):
+                if complaint_data.get("severity") == "High":
+                    complaint_data["priority"] = "High"
+                elif complaint_data.get("severity") == "Medium":
+                    complaint_data["priority"] = "Medium"
+                else:
+                    complaint_data["priority"] = "Low"
+                    
     except Exception as e:
         print(f"Extraction error: {e}")
         complaint_data = {}

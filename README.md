@@ -28,7 +28,7 @@ An AI-assisted, two-panel intake workflow for capturing pharmaceutical customer 
 - FastAPI 0.141.0
 - LangGraph 1.2.10 for AI agent workflows
 - LangChain 1.3.14 for LLM integration
-- Groq SDK with gemma2-9b-it model
+- Groq SDK with llama-3.3-70b-versatile model (gemma2-9b-it was decommissioned)
 - SQLAlchemy 2.0.51 with PostgreSQL
 - Pydantic for validation
 
@@ -215,7 +215,7 @@ This implementation follows the mandatory technology stack:
 - ✅ Frontend: React UI with Redux for state management
 - ✅ Backend: Python with FastAPI
 - ✅ AI Agent Framework: LangGraph
-- ✅ LLMs: Groq gemma2-9b-it
+- ✅ LLMs: Groq llama-3.3-70b-versatile (gemma2-9b-it was decommissioned)
 - ✅ Database: PostgreSQL
 - ✅ Font: Google Inter
 

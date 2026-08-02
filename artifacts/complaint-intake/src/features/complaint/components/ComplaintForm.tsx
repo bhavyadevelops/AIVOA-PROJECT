@@ -5,13 +5,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileText, Save, RotateCcw, AlertTriangle, Activity, ListChecks, CheckCircle2, Loader2, Clock, Calendar as CalendarIcon } from 'lucide-react';
-import type { ComplaintFields } from '@/types';
+import type { ComplaintFields } from '@/store/complaintSlice';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const FormField = ({ label, value, field, isAiGenerated, isVerified, isAnimating, onChange, multiline = false, isDateField = false }: any) => {
   const [date, setDate] = React.useState<Date | undefined>(value ? new Date(value) : undefined);
   const [open, setOpen] = React.useState(false);
+
+  // Sync local date state with value prop changes
+  React.useEffect(() => {
+    if (isDateField && value) {
+      setDate(new Date(value));
+    }
+  }, [value, isDateField]);
 
   const getBorderClass = () => {
     if (isVerified) return 'border-emerald-300 focus-visible:ring-emerald-500';
@@ -115,8 +122,8 @@ export function ComplaintForm({ complaint, aiPopulatedFields, editedFields, anim
               <h2 className="text-base font-bold text-slate-800">General Information</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-              <FormField label="Complaint Source" field="complaintSource" value={complaint.complaintSource} isAiGenerated={aiPopulatedFields.has('complaintSource')} isVerified={editedFields.has('complaintSource')} isAnimating={animatingFields.has('complaintSource')} onChange={onFieldChange} />
-              <FormField label="Customer Name" field="customerName" value={complaint.customerName} isAiGenerated={aiPopulatedFields.has('customerName')} isVerified={editedFields.has('customerName')} isAnimating={animatingFields.has('customerName')} onChange={onFieldChange} />
+              <FormField label="Complaint Source" field="complaintSource" value={complaint?.complaintSource || ''} isAiGenerated={aiPopulatedFields.includes('complaintSource')} isVerified={editedFields.includes('complaintSource')} isAnimating={animatingFields.includes('complaintSource')} onChange={onFieldChange} />
+              <FormField label="Customer Name" field="customerName" value={complaint?.customerName || ''} isAiGenerated={aiPopulatedFields.includes('customerName')} isVerified={editedFields.includes('customerName')} isAnimating={animatingFields.includes('customerName')} onChange={onFieldChange} />
             </div>
           </section>
 
@@ -126,12 +133,12 @@ export function ComplaintForm({ complaint, aiPopulatedFields, editedFields, anim
               <h2 className="text-base font-bold text-slate-800">Product Information</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-              <FormField label="Product Name" field="productName" value={complaint.productName} isAiGenerated={aiPopulatedFields.has('productName')} isVerified={editedFields.has('productName')} isAnimating={animatingFields.has('productName')} onChange={onFieldChange} />
-              <FormField label="Strength" field="strength" value={complaint.strength} isAiGenerated={aiPopulatedFields.has('strength')} isVerified={editedFields.has('strength')} isAnimating={animatingFields.has('strength')} onChange={onFieldChange} />
-              <FormField label="Batch Number" field="batch" value={complaint.batch} isAiGenerated={aiPopulatedFields.has('batch')} isVerified={editedFields.has('batch')} isAnimating={animatingFields.has('batch')} onChange={onFieldChange} />
-              <FormField label="Quantity" field="quantity" value={complaint.quantity} isAiGenerated={aiPopulatedFields.has('quantity')} isVerified={editedFields.has('quantity')} isAnimating={animatingFields.has('quantity')} onChange={onFieldChange} />
-              <FormField label="Manufacturing Date" field="manufacturingDate" value={complaint.manufacturingDate} isAiGenerated={aiPopulatedFields.has('manufacturingDate')} isVerified={editedFields.has('manufacturingDate')} isAnimating={animatingFields.has('manufacturingDate')} onChange={onFieldChange} isDateField />
-              <FormField label="Expiry Date" field="expiryDate" value={complaint.expiryDate} isAiGenerated={aiPopulatedFields.has('expiryDate')} isVerified={editedFields.has('expiryDate')} isAnimating={animatingFields.has('expiryDate')} onChange={onFieldChange} isDateField />
+              <FormField label="Product Name" field="productName" value={complaint?.productName || ''} isAiGenerated={aiPopulatedFields.includes('productName')} isVerified={editedFields.includes('productName')} isAnimating={animatingFields.includes('productName')} onChange={onFieldChange} />
+              <FormField label="Strength" field="strength" value={complaint?.strength || ''} isAiGenerated={aiPopulatedFields.includes('strength')} isVerified={editedFields.includes('strength')} isAnimating={animatingFields.includes('strength')} onChange={onFieldChange} />
+              <FormField label="Batch Number" field="batch" value={complaint?.batch || ''} isAiGenerated={aiPopulatedFields.includes('batch')} isVerified={editedFields.includes('batch')} isAnimating={animatingFields.includes('batch')} onChange={onFieldChange} />
+              <FormField label="Quantity" field="quantity" value={complaint?.quantity || ''} isAiGenerated={aiPopulatedFields.includes('quantity')} isVerified={editedFields.includes('quantity')} isAnimating={animatingFields.includes('quantity')} onChange={onFieldChange} />
+              <FormField label="Manufacturing Date" field="manufacturingDate" value={complaint?.manufacturingDate || ''} isAiGenerated={aiPopulatedFields.includes('manufacturingDate')} isVerified={editedFields.includes('manufacturingDate')} isAnimating={animatingFields.includes('manufacturingDate')} onChange={onFieldChange} isDateField />
+              <FormField label="Expiry Date" field="expiryDate" value={complaint?.expiryDate || ''} isAiGenerated={aiPopulatedFields.includes('expiryDate')} isVerified={editedFields.includes('expiryDate')} isAnimating={animatingFields.includes('expiryDate')} onChange={onFieldChange} isDateField />
             </div>
           </section>
 
@@ -141,11 +148,11 @@ export function ComplaintForm({ complaint, aiPopulatedFields, editedFields, anim
               <h2 className="text-base font-bold text-slate-800">Issue Description</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-              <FormField label="Complaint Type" field="complaintType" value={complaint.complaintType} isAiGenerated={aiPopulatedFields.has('complaintType')} isVerified={editedFields.has('complaintType')} isAnimating={animatingFields.has('complaintType')} onChange={onFieldChange} />
-              <FormField label="Complaint Date" field="complaintDate" value={complaint.complaintDate} isAiGenerated={aiPopulatedFields.has('complaintDate')} isVerified={editedFields.has('complaintDate')} isAnimating={animatingFields.has('complaintDate')} onChange={onFieldChange} isDateField />
+              <FormField label="Complaint Type" field="complaintType" value={complaint?.complaintType || ''} isAiGenerated={aiPopulatedFields.includes('complaintType')} isVerified={editedFields.includes('complaintType')} isAnimating={animatingFields.includes('complaintType')} onChange={onFieldChange} />
+              <FormField label="Complaint Date" field="complaintDate" value={complaint?.complaintDate || ''} isAiGenerated={aiPopulatedFields.includes('complaintDate')} isVerified={editedFields.includes('complaintDate')} isAnimating={animatingFields.includes('complaintDate')} onChange={onFieldChange} isDateField />
             </div>
             <div className="mt-5">
-              <FormField label="Description" field="description" value={complaint.description} isAiGenerated={aiPopulatedFields.has('description')} isVerified={editedFields.has('description')} isAnimating={animatingFields.has('description')} onChange={onFieldChange} multiline />
+              <FormField label="Description" field="description" value={complaint?.description || ''} isAiGenerated={aiPopulatedFields.includes('description')} isVerified={editedFields.includes('description')} isAnimating={animatingFields.includes('description')} onChange={onFieldChange} multiline />
             </div>
           </section>
 
@@ -155,8 +162,8 @@ export function ComplaintForm({ complaint, aiPopulatedFields, editedFields, anim
               <h2 className="text-base font-bold text-slate-800">Classification</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-              <FormField label="Initial Severity" field="severity" value={complaint.severity} isAiGenerated={aiPopulatedFields.has('severity')} isVerified={editedFields.has('severity')} isAnimating={animatingFields.has('severity')} onChange={onFieldChange} />
-              <FormField label="Priority" field="priority" value={complaint.priority} isAiGenerated={aiPopulatedFields.has('priority')} isVerified={editedFields.has('priority')} isAnimating={animatingFields.has('priority')} onChange={onFieldChange} />
+              <FormField label="Initial Severity" field="severity" value={complaint?.severity || ''} isAiGenerated={aiPopulatedFields.includes('severity')} isVerified={editedFields.includes('severity')} isAnimating={animatingFields.includes('severity')} onChange={onFieldChange} />
+              <FormField label="Priority" field="priority" value={complaint?.priority || ''} isAiGenerated={aiPopulatedFields.includes('priority')} isVerified={editedFields.includes('priority')} isAnimating={animatingFields.includes('priority')} onChange={onFieldChange} />
             </div>
           </section>
         </div>

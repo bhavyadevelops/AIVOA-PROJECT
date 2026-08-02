@@ -9,3 +9,5 @@ langchain-groq
 python-multipart
 python-dotenv
 httpx
+PyPDF2
+python-docx

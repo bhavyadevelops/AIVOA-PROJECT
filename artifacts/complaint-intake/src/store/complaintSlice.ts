@@ -31,9 +31,9 @@ interface ComplaintState {
   complaint: Partial<ComplaintFields>;
   riskAssessment: RiskAssessment | null;
   missingFields: string[];
-  aiPopulatedFields: Set<keyof ComplaintFields>;
-  editedFields: Set<keyof ComplaintFields>;
-  animatingFields: Set<keyof ComplaintFields>;
+  aiPopulatedFields: (keyof ComplaintFields)[];
+  editedFields: (keyof ComplaintFields)[];
+  animatingFields: (keyof ComplaintFields)[];
   isExtracting: boolean;
   isSaving: boolean;
   error: string | null;
@@ -43,9 +43,9 @@ const initialState: ComplaintState = {
   complaint: {},
   riskAssessment: null,
   missingFields: [],
-  aiPopulatedFields: new Set(),
-  editedFields: new Set(),
-  animatingFields: new Set(),
+  aiPopulatedFields: [],
+  editedFields: [],
+  animatingFields: [],
   isExtracting: false,
   isSaving: false,
   error: null,
@@ -54,11 +54,21 @@ const initialState: ComplaintState = {
 // Async thunks
 export const extractComplaint = createAsyncThunk(
   'complaint/extract',
-  async (data: { text: string; documentName?: string; documentType?: string }) => {
+  async (data: { text: string; documentName?: string; documentType?: string; file?: File }) => {
+    const formData = new FormData();
+    
+    if (data.file) {
+      formData.append('file', data.file);
+      formData.append('document_name', data.documentName || data.file.name);
+    } else {
+      formData.append('text', data.text);
+      if (data.documentName) formData.append('document_name', data.documentName);
+      if (data.documentType) formData.append('document_type', data.documentType);
+    }
+    
     const response = await fetch('http://localhost:8000/api/complaints/extract', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: formData,
     });
     
     if (!response.ok) {
@@ -72,6 +82,7 @@ export const extractComplaint = createAsyncThunk(
 export const saveComplaint = createAsyncThunk(
   'complaint/save',
   async (data: { complaint: ComplaintFields; riskAssessment: RiskAssessment }) => {
+    console.log('Sending save request with data:', data);
     const response = await fetch('http://localhost:8000/api/complaints/complaints', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -79,7 +90,10 @@ export const saveComplaint = createAsyncThunk(
     });
     
     if (!response.ok) {
-      throw new Error('Failed to save complaint');
+      const errorText = await response.text();
+      console.error('Save failed with status:', response.status);
+      console.error('Error response:', errorText);
+      throw new Error(`Failed to save complaint: ${errorText}`);
     }
     
     return response.json();
@@ -96,34 +110,40 @@ const complaintSlice = createSlice({
     setRiskAssessment: (state, action: PayloadAction<RiskAssessment>) => {
       state.riskAssessment = action.payload;
     },
-    setAiPopulatedFields: (state, action: PayloadAction<Set<keyof ComplaintFields>>) => {
+    setAiPopulatedFields: (state, action: PayloadAction<(keyof ComplaintFields)[]>) => {
       state.aiPopulatedFields = action.payload;
     },
-    setEditedFields: (state, action: PayloadAction<Set<keyof ComplaintFields>>) => {
+    setEditedFields: (state, action: PayloadAction<(keyof ComplaintFields)[]>) => {
       state.editedFields = action.payload;
     },
-    setAnimatingFields: (state, action: PayloadAction<Set<keyof ComplaintFields>>) => {
+    setAnimatingFields: (state, action: PayloadAction<(keyof ComplaintFields)[]>) => {
       state.animatingFields = action.payload;
     },
     addAiPopulatedField: (state, action: PayloadAction<keyof ComplaintFields>) => {
-      state.aiPopulatedFields.add(action.payload);
+      if (!state.aiPopulatedFields.includes(action.payload)) {
+        state.aiPopulatedFields.push(action.payload);
+      }
     },
     addEditedField: (state, action: PayloadAction<keyof ComplaintFields>) => {
-      state.editedFields.add(action.payload);
+      if (!state.editedFields.includes(action.payload)) {
+        state.editedFields.push(action.payload);
+      }
     },
     addAnimatingField: (state, action: PayloadAction<keyof ComplaintFields>) => {
-      state.animatingFields.add(action.payload);
+      if (!state.animatingFields.includes(action.payload)) {
+        state.animatingFields.push(action.payload);
+      }
     },
     removeAnimatingField: (state, action: PayloadAction<keyof ComplaintFields>) => {
-      state.animatingFields.delete(action.payload);
+      state.animatingFields = state.animatingFields.filter(field => field !== action.payload);
     },
     reset: (state) => {
       state.complaint = {};
       state.riskAssessment = null;
       state.missingFields = [];
-      state.aiPopulatedFields = new Set();
-      state.editedFields = new Set();
-      state.animatingFields = new Set();
+      state.aiPopulatedFields = [];
+      state.editedFields = [];
+      state.animatingFields = [];
       state.error = null;
     },
     clearError: (state) => {
@@ -144,14 +164,14 @@ const complaintSlice = createSlice({
         state.missingFields = action.payload.missingFields;
         
         // Set AI populated fields
-        const populated = new Set<keyof ComplaintFields>();
+        const populated: (keyof ComplaintFields)[] = [];
         Object.keys(action.payload.complaint).forEach((key) => {
           if (action.payload.complaint[key as keyof ComplaintFields]) {
-            populated.add(key as keyof ComplaintFields);
+            populated.push(key as keyof ComplaintFields);
           }
         });
         state.aiPopulatedFields = populated;
-        state.editedFields = new Set();
+        state.editedFields = [];
       })
       .addCase(extractComplaint.rejected, (state, action) => {
         state.isExtracting = false;
@@ -168,9 +188,9 @@ const complaintSlice = createSlice({
         state.complaint = {};
         state.riskAssessment = null;
         state.missingFields = [];
-        state.aiPopulatedFields = new Set();
-        state.editedFields = new Set();
-        state.animatingFields = new Set();
+        state.aiPopulatedFields = [];
+        state.editedFields = [];
+        state.animatingFields = [];
       })
       .addCase(saveComplaint.rejected, (state, action) => {
         state.isSaving = false;

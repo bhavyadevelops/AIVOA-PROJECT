@@ -37,7 +37,7 @@ export default function Dashboard() {
         <IntakeAssistant 
           onExtract={handleExtract}
           isExtracting={isExtracting}
-          hasExtractedData={aiPopulatedFields.size > 0}
+          hasExtractedData={aiPopulatedFields.length > 0}
           missingFields={missingFields}
           complaint={complaint}
           riskAssessment={riskAssessment}

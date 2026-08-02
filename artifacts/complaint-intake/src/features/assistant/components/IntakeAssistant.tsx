@@ -8,7 +8,7 @@ import { Bot, Sparkles, Send, MessageCircle, Loader2, CheckCircle2, Upload, Aler
 import type { ComplaintFields, RiskAssessment } from '@/types';
 
 interface IntakeAssistantProps {
-  onExtract: (text: string) => void;
+  onExtract: (text: string, documentName?: string, documentType?: string, file?: File) => void;
   isExtracting: boolean;
   hasExtractedData: boolean;
   missingFields: string[];
@@ -42,7 +42,7 @@ export function IntakeAssistant({ onExtract, isExtracting, hasExtractedData, mis
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExtract = () => {
-    if (!inputText.trim()) {
+    if (!inputText.trim() && !file) {
       alert('Please enter complaint text or upload a file');
       return;
     }
@@ -53,8 +53,10 @@ export function IntakeAssistant({ onExtract, isExtracting, hasExtractedData, mis
       return;
     }
     
-    onExtract(inputText);
     simulateProgress();
+    
+    // Pass everything to the parent component to handle via Redux
+    onExtract(inputText, file?.name, file?.name.split('.').pop(), file || undefined);
   };
 
   const simulateProgress = () => {
@@ -105,16 +107,22 @@ export function IntakeAssistant({ onExtract, isExtracting, hasExtractedData, mis
       }
 
       setFile(selectedFile);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const text = event.target?.result as string;
-        setInputText(text);
-      };
-      reader.onerror = () => {
-        console.error('Error reading file');
-        alert('Error reading file. Please try again.');
-      };
-      reader.readAsText(selectedFile);
+      // For text files, read directly; for PDF/DOCX, will be sent to backend
+      if (['.txt', '.eml', '.csv'].includes(fileExtension)) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const text = event.target?.result as string;
+          setInputText(text);
+        };
+        reader.onerror = () => {
+          console.error('Error reading file');
+          alert('Error reading file. Please try again.');
+        };
+        reader.readAsText(selectedFile);
+      } else {
+        // For PDF/DOCX, just show the file name and let backend handle extraction
+        setInputText(`File uploaded: ${selectedFile.name}`);
+      }
     }
   };
 
@@ -130,7 +138,7 @@ export function IntakeAssistant({ onExtract, isExtracting, hasExtractedData, mis
     const droppedFile = e.dataTransfer.files?.[0];
     if (droppedFile) {
       // Simulate file upload
-      const event = { target: { files: [droppedFile] } } as React.ChangeEvent<HTMLInputElement>;
+      const event = { target: { files: [droppedFile] } } as unknown as React.ChangeEvent<HTMLInputElement>;
       handleFileUpload(event);
     }
   };

@@ -15,6 +15,12 @@ from ai.graph import complaint_graph
 async def lifespan(app: FastAPI):
     # Startup
     print("Starting up AIVOA Complaint Management System...")
+    try:
+        from database import init_db
+        init_db()
+        print("Database initialized successfully")
+    except Exception as e:
+        print(f"Warning: Database initialization failed: {e}")
     yield
     # Shutdown
     print("Shutting down...")
